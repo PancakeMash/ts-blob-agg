@@ -7,7 +7,7 @@ import {
 
 
 
-function main() {
+async function main() {
     const cfg = readConfig();
     const registry: CommandsRegistry = {};
 
@@ -22,7 +22,14 @@ function main() {
         process.exit(1);
     }
 
-    runCommand(registry, cmdName, ...cmdArgs);
+    try {
+        await runCommand(registry, cmdName, ...cmdArgs);
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(msg);
+        process.exit(1);
+    }
+    process.exit(0);
 }
 
-main();
+await main();

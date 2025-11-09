@@ -5,19 +5,17 @@ export function registerCommand(registry: CommandsRegistry, cmdName: string, han
     registry[cmdName] = handler;
 }
 
-export function runCommand(registry: CommandsRegistry, cmdName: string, ...args: string[]): void {
+export async function runCommand(registry: CommandsRegistry, cmdName: string, ...args: string[]): Promise<void> {
     const handler = registry[cmdName];
     if (handler === undefined) {
         throw new Error(`unknown command: ${cmdName}`);
     }
-    handler(cmdName, ...args);
+    await handler(cmdName, ...args);
 }
 
 
-
-
 //Handler functions:
-export function handlerLogin(cmdName: string, ...args: string[]): void {
+export async function handlerLogin(cmdName: string, ...args: string[]): Promise<void> {
     if (args.length !== 1) {
         throw new Error("login requires exactly one username");
     }
@@ -29,7 +27,7 @@ export function handlerLogin(cmdName: string, ...args: string[]): void {
 
 
 //Types:
-type CommandHandler = (cmdName: string, ...args: string[]) => void;
+type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistry = Record<string, CommandHandler>;
 
 
