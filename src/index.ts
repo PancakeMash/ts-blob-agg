@@ -2,7 +2,8 @@ import { readConfig } from "./config.js";
 import {
     type CommandsRegistry, handlerLogin,
     registerCommand,
-    runCommand
+    runCommand,
+    handlerRegister
 } from "./commands.js";
 
 
@@ -12,6 +13,7 @@ async function main() {
     const registry: CommandsRegistry = {};
 
     registerCommand(registry, "login", handlerLogin);
+    registerCommand(registry, "register", handlerRegister);
 
     const args: string[] = process.argv.slice(2);
     const cmdName = args[0];

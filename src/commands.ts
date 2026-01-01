@@ -1,4 +1,6 @@
+import { check } from "drizzle-orm/gel-core/checks.js";
 import {setUser} from "./config.js";
+import { createUser, getUser } from "./lib/db/queries/users.js"
 
 
 export function registerCommand(registry: CommandsRegistry, cmdName: string, handler: CommandHandler): void {
@@ -20,9 +22,27 @@ export async function handlerLogin(cmdName: string, ...args: string[]): Promise<
         throw new Error("login requires exactly one username");
     }
     const username = args[0];
+    const checking = await getUser(username);
+    if (!checking) {
+        throw new Error("user does not exist");
+    }
     setUser(username);
-
     console.log("logged in as", username);
+}
+
+export async function handlerRegister(cmdName: string, ...args: string[]): Promise<void> {
+    if (args.length !==1) {
+        throw new Error("Registration requires exactly one username");
+    }
+    const username = args[0];
+    const checkName = await getUser(username);
+    if (checkName) {
+        throw new Error("user already exists");
+    }
+
+    const newUser = await createUser(username);
+    setUser(username);
+    console.log("User has been created: ", newUser);
 }
 
 
