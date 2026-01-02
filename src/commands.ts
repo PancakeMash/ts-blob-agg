@@ -1,6 +1,8 @@
 import { check } from "drizzle-orm/gel-core/checks.js";
 import {setUser} from "./config.js";
-import { createUser, getUser } from "./lib/db/queries/users.js"
+import { createUser, getUser, deleteUsers, getUsers } from "./lib/db/queries/users.js"
+import { db } from "./lib/db/index.js";
+import { readConfig } from "./config.js";
 
 
 export function registerCommand(registry: CommandsRegistry, cmdName: string, handler: CommandHandler): void {
@@ -43,6 +45,26 @@ export async function handlerRegister(cmdName: string, ...args: string[]): Promi
     const newUser = await createUser(username);
     setUser(username);
     console.log("User has been created: ", newUser);
+}
+
+export async function handlerReset(cmdName: string, ...args: string[]): Promise<void> {
+    await deleteUsers();
+    console.log("database reset successfully");
+}
+
+export async function handlerUsers(cmdName: string, ...args: string[]): Promise<void> {
+    const users = await getUsers();
+    const cfg = readConfig();
+    const currUser = cfg.currentUserName;
+
+    for (let i = 0; i < users.length; i++) {
+        let listUser = users[i].name;
+        if (listUser === currUser) {
+            console.log(`* ${listUser} (current)`);
+            continue;
+        }
+        console.log(`* ${listUser}`);
+    }
 }
 
 
