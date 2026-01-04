@@ -7,6 +7,7 @@ import {
     handlerReset,
     handlerUsers,
     handlerAgg,
+    addFeed
 } from "./commands.js";
 
 
@@ -20,6 +21,7 @@ async function main() {
     registerCommand(registry, "reset", handlerReset);
     registerCommand(registry, "users", handlerUsers);
     registerCommand(registry, "agg", handlerAgg);
+    registerCommand(registry, "addfeed", addFeed);
 
     const args: string[] = process.argv.slice(2);
     const cmdName = args[0];
