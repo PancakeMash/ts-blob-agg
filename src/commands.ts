@@ -1,11 +1,12 @@
 import { check } from "drizzle-orm/gel-core/checks.js";
 import {setUser} from "./config.js";
-import { createUser, getUser, deleteUsers, getUsers } from "./lib/db/queries/users.js"
+import { createUser, getUser, deleteUsers, getUsers, getUserById } from "./lib/db/queries/users.js"
 import { db } from "./lib/db/index.js";
 import { readConfig } from "./config.js";
 import { fetchFeed } from "./rss.js";
-import { createFeed } from "./lib/db/queries/feeds.js";
+import { createFeed, getFeeds } from "./lib/db/queries/feeds.js";
 import { type Feed, type User } from "./lib/db/schema.js";
+import { userInfo } from "os";
 
 export function registerCommand(registry: CommandsRegistry, cmdName: string, handler: CommandHandler): void {
     registry[cmdName] = handler;
@@ -100,6 +101,16 @@ export async function addFeed(cmdName: string, ...args: string[]): Promise<void>
     }
 
     printFeed(feed, userInfo);
+}
+
+export async function handlerGetFeeds(cmdName: string, ...args: string[]): Promise<void> {
+    const feeds = await getFeeds();
+
+    for (const feed of feeds) {
+        console.log(feed.name);
+        console.log(feed.url);
+        console.log(feed.username);
+    }
 }
 
 //Helper functions:
