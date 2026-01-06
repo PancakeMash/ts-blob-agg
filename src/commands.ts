@@ -8,7 +8,6 @@ import { createFeed, getFeeds, getFeedByUrl } from "./lib/db/queries/feeds.js";
 import { createFeedFollow, getFeedFollowsForUser } from "./lib/db/queries/feedfollow.js";
 import { type Feed, type User } from "./lib/db/schema.js";
 import { userInfo } from "os";
-import { argon2Sync } from "crypto";
 import { error } from "console";
 
 export function registerCommand(registry: CommandsRegistry, cmdName: string, handler: CommandHandler): void {
