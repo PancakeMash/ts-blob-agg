@@ -4,9 +4,12 @@ import { createUser, getUser, deleteUsers, getUsers, getUserById } from "./lib/d
 import { db } from "./lib/db/index.js";
 import { readConfig } from "./config.js";
 import { fetchFeed } from "./rss.js";
-import { createFeed, getFeeds } from "./lib/db/queries/feeds.js";
+import { createFeed, getFeeds, getFeedByUrl } from "./lib/db/queries/feeds.js";
+import { createFeedFollow, getFeedFollowsForUser } from "./lib/db/queries/feedfollow.js";
 import { type Feed, type User } from "./lib/db/schema.js";
 import { userInfo } from "os";
+import { argon2Sync } from "crypto";
+import { error } from "console";
 
 export function registerCommand(registry: CommandsRegistry, cmdName: string, handler: CommandHandler): void {
     registry[cmdName] = handler;
@@ -100,6 +103,8 @@ export async function addFeed(cmdName: string, ...args: string[]): Promise<void>
         throw new Error("failed to create feed");
     }
 
+    await createFeedFollow(userInfo.id, feed.id);
+
     printFeed(feed, userInfo);
 }
 
@@ -111,6 +116,47 @@ export async function handlerGetFeeds(cmdName: string, ...args: string[]): Promi
         console.log(feed.url);
         console.log(feed.username);
     }
+}
+
+export async function handlerFollow(cmdName: string, ...args: string[]): Promise<void> {
+     if (args.length !== 1) {
+        throw new Error(`usage: ${cmdName} <url>`);
+     }
+     const url = args[0];
+
+     const cfg = readConfig();
+     const currUser = cfg.currentUserName;
+     if (!currUser) {
+        throw new Error("user not found");
+     }
+     const currUserInfo = await getUser(currUser);
+     const userId = currUserInfo.id;
+
+     const feedInfo = await getFeedByUrl(url);
+     if (!feedInfo) {
+        throw new Error(`feed not found for url: ${url}`);
+     }
+     const feedId = feedInfo.id;
+
+     const feedFollow = await createFeedFollow(userId, feedId);
+     console.log(`Feed: ${feedFollow.feedName}, User: ${feedFollow.user}`);
+}
+
+export async function handlerFollowing(cmdName: string, ...args: string[]): Promise<void> {
+    const cfg = readConfig();
+    const currUser = cfg.currentUserName;
+    if (!currUser) {
+        throw new Error("user not found");
+    }
+
+    const userInfo = await getUser(currUser);
+    const userId = userInfo.id;
+
+    const feedFollowings = await getFeedFollowsForUser(userId);
+    for (const feedFollowing of feedFollowings) {
+        console.log(feedFollowing.feedName);
+    }
+
 }
 
 //Helper functions:
