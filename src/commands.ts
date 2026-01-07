@@ -78,33 +78,21 @@ export async function handlerAgg(cmdName: string, ...args: string[]): Promise<vo
     console.log(JSON.stringify(feed, null, 2));
 }
 
-export async function addFeed(cmdName: string, ...args: string[]): Promise<void>{
+export async function addFeed(cmdName: string, user: User, ...args: string[]): Promise<void>{
     if (args.length !== 2) {
         throw new Error(`usage: ${cmdName} <feed_name> <url>`);
     }
-
-    const cfg = readConfig();
-    const currUser = cfg.currentUserName;
-    if (!currUser) {
-        throw new Error("user does not exist");
-    }
-
     const feedName = args[0];
     const feedUrl = args[1];
 
-    const userInfo = await getUser(currUser);
-    if (!userInfo) {
-        throw new Error(`User ${currUser} not found`);
-    }
-
-    const feed = await createFeed(feedName, feedUrl, userInfo.id);
+    const feed = await createFeed(feedName, feedUrl, user.id);
     if (!feed) {
         throw new Error("failed to create feed");
     }
 
-    await createFeedFollow(userInfo.id, feed.id);
+    await createFeedFollow(user.id, feed.id);
 
-    printFeed(feed, userInfo);
+    printFeed(feed, user);
 }
 
 export async function handlerGetFeeds(cmdName: string, ...args: string[]): Promise<void> {
@@ -117,19 +105,12 @@ export async function handlerGetFeeds(cmdName: string, ...args: string[]): Promi
     }
 }
 
-export async function handlerFollow(cmdName: string, ...args: string[]): Promise<void> {
+export async function handlerFollow(cmdName: string, user: User, ...args: string[]): Promise<void> {
      if (args.length !== 1) {
         throw new Error(`usage: ${cmdName} <url>`);
      }
      const url = args[0];
-
-     const cfg = readConfig();
-     const currUser = cfg.currentUserName;
-     if (!currUser) {
-        throw new Error("user not found");
-     }
-     const currUserInfo = await getUser(currUser);
-     const userId = currUserInfo.id;
+     const userId = user.id;
 
      const feedInfo = await getFeedByUrl(url);
      if (!feedInfo) {
@@ -141,15 +122,8 @@ export async function handlerFollow(cmdName: string, ...args: string[]): Promise
      console.log(`Feed: ${feedFollow.feedName}, User: ${feedFollow.user}`);
 }
 
-export async function handlerFollowing(cmdName: string, ...args: string[]): Promise<void> {
-    const cfg = readConfig();
-    const currUser = cfg.currentUserName;
-    if (!currUser) {
-        throw new Error("user not found");
-    }
-
-    const userInfo = await getUser(currUser);
-    const userId = userInfo.id;
+export async function handlerFollowing(cmdName: string, user: User, ...args: string[]): Promise<void> {
+    const userId = user.id;
 
     const feedFollowings = await getFeedFollowsForUser(userId);
     for (const feedFollowing of feedFollowings) {
@@ -166,10 +140,34 @@ function printFeed(feed: Feed, user: User) {
     console.log(`* Username: ${user.name}`);
 }
 
+export function middlewareLoggedIn(handler: UserCommandHandler): CommandHandler {
+    return async (cmdName: string, ...args: string[]): Promise<void> => {
+        const cfg = readConfig();
+        const currUser = cfg.currentUserName;
+        if (!currUser) {
+            throw new Error("user not found");
+        }
+
+        const userInfo = await getUser(currUser);
+        if (!userInfo) {
+            throw new Error("user not found");
+        }
+
+        await handler(cmdName, userInfo, ...args);
+    };
+}
+
 //Types:
 type CommandHandler = (cmdName: string, ...args: string[]) => Promise<void>;
 export type CommandsRegistry = Record<string, CommandHandler>;
 
+type UserCommandHandler = (
+    cmdName: string,
+    user: User,
+    ...args: string[]
+) => Promise<void>;
+
+type middlewareLoggedIn = (handler: UserCommandHandler) => CommandHandler;
 
 
 
