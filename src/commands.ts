@@ -1,14 +1,11 @@
-import { check } from "drizzle-orm/gel-core/checks.js";
-import {setUser} from "./config.js";
+import { setUser } from "./config.js";
 import { createUser, getUser, deleteUsers, getUsers, getUserById } from "./lib/db/queries/users.js"
-import { db } from "./lib/db/index.js";
 import { readConfig } from "./config.js";
 import { fetchFeed } from "./rss.js";
 import { createFeed, getFeeds, getFeedByUrl } from "./lib/db/queries/feeds.js";
-import { createFeedFollow, getFeedFollowsForUser } from "./lib/db/queries/feedfollow.js";
+import { createFeedFollow, getFeedFollowsForUser, unfollowFeed } from "./lib/db/queries/feedfollow.js";
 import { type Feed, type User } from "./lib/db/schema.js";
-import { userInfo } from "os";
-import { error } from "console";
+
 
 export function registerCommand(registry: CommandsRegistry, cmdName: string, handler: CommandHandler): void {
     registry[cmdName] = handler;
@@ -130,6 +127,30 @@ export async function handlerFollowing(cmdName: string, user: User, ...args: str
         console.log(feedFollowing.feedName);
     }
 
+}
+
+export async function handlerUnfollow(cmdName: string, user: User, ...args: string[]): Promise<void> {
+    if (args.length !== 1) {
+        throw new Error(`usage: ${cmdName} <url>`);
+    }
+
+    const feedFollowing = await getFeedFollowsForUser(user.id);
+    if (!feedFollowing) {
+        throw new Error("no feeds could be found for user");
+    }
+
+    const feedUrl = args[0];
+    let feedId: string = "";
+    for (const feed of feedFollowing) {
+        if (feed.feedUrl === feedUrl) {
+            feedId = feed.feedId;
+        }
+    }
+    if (feedId === "") {
+        throw new Error("feed could not be found for the provided url");
+    }
+    
+    await unfollowFeed(user.id, feedId);
 }
 
 //Helper functions:
